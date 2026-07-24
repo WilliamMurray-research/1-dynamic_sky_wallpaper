@@ -50,7 +50,7 @@ Each DSL field maps to a fixed, deterministic transformation:
 - **wave texture** → `wave_intensity`  
 - **tree lean transform** → `wind_strength`  
 - **palette recolouring** → `island_palette`  
-- **sun/moon/stars** → sky fields  
+- **sun/moon/stars** → `sky fields`  
 - **weather overlays** → `weather`  
 - **character animations** → `daily_state`
 
