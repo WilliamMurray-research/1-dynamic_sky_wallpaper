@@ -44,24 +44,42 @@ This keeps GPU usage extremely low while producing a continuously updated sky.
 ```
 dynamic-sky-wallpaper/
 │
-├── api/
-│   ├── sun_moon.py        # Solar & lunar data fetch
-│   ├── weather.py         # Weather API fetch
-│   └── tides.py           # Optional tide data
+├── docs/
+│   ├── dsl-spec.md            # Formal scene DSL specification
+│   ├── architecture.md        # System architecture & data flow
+│   ├── telemetry.md           # Sun/moon/weather/tide data sources
+│   ├── rendering.md           # Prompt + tiny-model rendering pipeline
+│   ├── roadmap.md             # Planned extensions
+│   └── contributing.md        # Guidelines for contributors
 │
-├── scene/
-│   ├── builder.py         # Telemetry → DSL scene JSON
-│   └── rules.py           # Semantic rules (sun pos, sky mode, etc.)
+├── src/
+│   ├── api/
+│   │   ├── sun_moon.py        # Solar & lunar data fetch
+│   │   ├── weather.py         # Weather API fetch
+│   │   └── tides.py           # Optional tide data
+│   │
+│   ├── scene/
+│   │   ├── builder.py         # Telemetry → DSL scene JSON
+│   │   └── rules.py           # Semantic rules (sun pos, sky mode, etc.)
+│   │
+│   ├── model/
+│   │   ├── prompt.py          # DSL → deterministic prompt
+│   │   └── render.py          # Tiny model renderer
+│   │
+│   ├── wallpaper/
+│   │   └── setter.py          # OS-specific wallpaper update
+│   │
+│   ├── config/
+│   │   └── loader.py          # Config loader & validation
+│   │
+│   └── main.py                # Main loop
 │
-├── model/
-│   ├── prompt.py          # DSL → deterministic prompt
-│   └── render.py          # Tiny model renderer
+├── tests/                     # Unit tests for DSL, rules, rendering
 │
-├── wallpaper/
-│   └── setter.py          # OS-specific wallpaper update
-│
-├── main.py                # Main loop
-└── README.md
+├── config.json                # User configuration
+├── README.md                  # Project overview
+└── LICENSE
+
 ```
 
 ---
