@@ -56,19 +56,19 @@ This produces a stable, ambient, low‑GPU digital twin of your day.
 dynamic_island_wallpaper/
 │
 ├── docs/
-│   ├── motivation.md          # Project motivation
+│   ├── motivation.md          # Why the project exists; design philosophy
 │   ├── dsl-spec.md            # Formal scene DSL specification (v0.0.1)
-│   ├── architecture.md        # System architecture & data flow
-│   ├── telemetry.md           # Astronomy + BOM telemetry
+│   ├── architecture.md        # Full system architecture & data flow
+│   ├── telemetry.md           # Astronomy + BOM telemetry (deterministic)
 │   ├── rendering.md           # Procedural compositor & generative mode
-│   ├── roadmap.md             # Planned extensions
-│   └── contributing.md        # Guidelines for contributors
+│   ├── roadmap.md             # Planned extensions & future versions
+│   └── contributing.md        # Contributor guidelines & coding standards
 │
 ├── src/
 │   ├── telemetry/
 │   │   ├── astronomy.py       # Sun/moon position + phase (local computation)
-│   │   ├── bom_weather.py     # BOM weather + wind
-│   │   └── bom_tide.py        # BOM tide height
+│   │   ├── bom_weather.py     # BOM weather + wind → numeric telemetry
+│   │   └── bom_tide.py        # BOM tide height → numeric telemetry
 │   │
 │   ├── prolog/
 │   │   ├── rules.pl           # Telemetry → symbolic scene rules
@@ -87,15 +87,27 @@ dynamic_island_wallpaper/
 │   ├── config/
 │   │   └── loader.py          # Config loader & validation
 │   │
-│   └── main.py                # Main loop
+│   └── main.py                # Main loop: telemetry → Prolog → render → wallpaper
 │
-├── assets/                    # Base island image + animation frames
-├── tests/                     # Unit tests for DSL, rules, rendering
+├── assets/                    # Base island image + overlays + animation frames
 │
-├── config.json                # User configuration
-├── README.md                  # Project overview
-├── CHANGELOG.md
-└── LICENSE
+├── tests/                     # Unit tests for DSL, rules, telemetry, rendering
+│   ├── test_rules.py
+│   ├── test_emit_json.py
+│   ├── test_astronomy.py
+│   ├── test_bom_weather.py
+│   ├── test_bom_tide.py
+│   ├── test_palette.py
+│   ├── test_waves.py
+│   ├── test_tree.py
+│   ├── test_animations.py
+│   └── test_compositor.py
+│
+├── config.json                # User configuration (location, rhythm, BOM ID)
+├── README.md                  # Project overview & quickstart
+├── CHANGELOG.md               # Version history
+└── LICENSE                    # Open-source license
+
 ```
 
 ---
