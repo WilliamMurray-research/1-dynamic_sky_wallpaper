@@ -45,6 +45,7 @@ This keeps GPU usage extremely low while producing a continuously updated sky.
 dynamic_sky_wallpaper/
 │
 ├── docs/
+│   ├── motivation.md             # Project motivation
 │   ├── dsl-spec.md            # Formal scene DSL specification
 │   ├── architecture.md        # System architecture & data flow
 │   ├── telemetry.md           # Sun/moon/weather/tide data sources
