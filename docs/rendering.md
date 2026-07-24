@@ -1,195 +1,176 @@
-# Rendering Pipeline Specification
+# Rendering  
+Dynamic Island Wallpaper supports **two rendering modes**, each with different determinism guarantees:
 
-## 1. Purpose  
-The rendering pipeline converts a symbolic **scene DSL** into a deterministic sky image.  
-The renderer is intentionally minimal: it does not “create art,” it **renders** a scene description.  
-This document defines the prompt rules, model configuration, deterministic behaviour, and output requirements.
+1. **Deterministic Procedural Rendering**  
+2. **Non‑Deterministic Generative Reference‑Image Rendering**
 
----
-
-## 2. Rendering Overview  
-Rendering consists of three stages:
-
-1. **Prompt Generation** — DSL → deterministic text prompt  
-2. **Model Invocation** — tiny model renders the scene  
-3. **Output Handling** — save image and pass to wallpaper module
-
-The renderer must produce identical output for identical DSL input.
-
-For deeper exploration:  
-- generative renderer design  
-- scene DSL
+Determinism is binary:  
+**a pipeline is deterministic or it is not.**  
+This document makes that distinction explicit.
 
 ---
 
-## 3. Prompt Generation (`src/model/prompt.py`)
+## 1. Rendering Overview  
+The renderer consumes the symbolic **Scene DSL (v0.0.1)** and produces a wallpaper image.
 
-### 3.1 Purpose  
-Convert DSL fields into a fixed, predictable text prompt.  
-No randomness, synonyms, or stylistic variation.
+The DSL contains *only symbolic meaning*:
 
-### 3.2 Prompt Structure  
-The prompt is composed of short declarative lines:
+- sky state  
+- weather  
+- tide  
+- wind  
+- waves  
+- palette  
+- daily rhythm  
 
-```
-Minimalist sky wallpaper.
-<sky_mode> gradient.
-Sun: <sun_height> at <sunposition>.
-Weather: <weather>.
-Moon: <moon>.
-Stars: <true|false>.
-```
+The renderer interprets these symbols using one of two modes.
 
-### 3.3 Rules  
-- Each DSL field maps to exactly one line.  
-- No adjectives beyond the defined vocabulary.  
-- No creative phrasing.  
-- No conditional grammar.  
-- No model-specific keywords (e.g., “masterpiece”, “ultra-detailed”).  
-- The prompt must remain stable across versions unless the DSL changes.
+---
 
-### 3.4 Example  
-DSL:
+# 2. Procedural Rendering (Deterministic)
+
+Procedural rendering is **strictly deterministic**.
+
+> **Given the same DSL JSON + same base PNG → the output PNG is identical, byte‑for‑byte.**
+
+There is no randomness, no sampling, no diffusion, no stochastic noise.
+
+### 2.1 Base Image  
+A fixed PNG containing:
+
+- island silhouette  
+- ocean baseline  
+- palm tree neutral pose  
+- sky gradient placeholders  
+
+### 2.2 Deterministic Overlays  
+Each DSL field maps to a fixed, deterministic transformation:
+
+- **waterline mask** → `tide_state`  
+- **wave texture** → `wave_intensity`  
+- **tree lean transform** → `wind_strength`  
+- **palette recolouring** → `island_palette`  
+- **sun/moon/stars** → sky fields  
+- **weather overlays** → `weather`  
+- **character animations** → `daily_state`
+
+### 2.3 Animation Frames  
+Animations are deterministic frame sequences:
+
+- morning coffee  
+- work‑start sitting  
+- break‑time callisthenics  
+- evening wave  
+- sleep‑time campfire extinguish  
+
+No randomness is introduced.
+
+### 2.4 Determinism Guarantee  
+Procedural mode is **fully deterministic**.
+
+---
+
+# 3. Generative Reference‑Image Mode (Non‑Deterministic)
+
+This mode uses a **reference image** and applies a **generative transformation** (e.g., diffusion‑based img2img).
+
+This pipeline is **not deterministic**, even if:
+
+- the seed is fixed  
+- the model is fixed  
+- the scheduler is fixed  
+- the prompt is fixed  
+- the reference image is fixed  
+- the strength parameter is fixed  
+
+### Why it is not deterministic  
+Diffusion models introduce nondeterminism through:
+
+- stochastic denoising  
+- GPU kernel scheduling  
+- floating‑point nondeterminism  
+- latent sampling variance  
+- hardware‑dependent execution paths  
+
+Therefore:
+
+> **Generative reference‑image mode cannot guarantee identical PNG output.**
+
+This is a fundamental property of diffusion‑based systems.
+
+### 3.1 When to use this mode  
+Only when you want:
+
+- stylistic variation  
+- painterly reinterpretation  
+- non‑procedural creativity  
+- diffusion‑based enhancement of the base image
+
+### 3.2 When NOT to use this mode  
+When you require:
+
+- reproducibility  
+- testability  
+- deterministic behaviour  
+- byte‑for‑byte identical output
+
+---
+
+# 4. Renderer Selection  
+The renderer is chosen in configuration:
 
 ```json
 {
-  "sunposition": "bottomright",
-  "sun_height": "low",
-  "sky_mode": "dawn",
-  "weather": "approaching_rain",
-  "moon": "none",
-  "stars": true,
-  "version": "1.0"
+  "renderer_mode": "procedural"   // deterministic
 }
 ```
 
-Prompt:
-
-```
-Minimalist sky wallpaper.
-Dawn gradient.
-Sun: low at bottomright.
-Weather: approaching_rain.
-Moon: none.
-Stars: true.
-```
-
----
-
-## 4. Model Rendering (`src/model/render.py`)
-
-### 4.1 Model Requirements  
-The renderer uses a **tiny local model** (e.g., SD‑Tiny, SD‑Mini).  
-Requirements:
-
-- Deterministic seed  
-- Fixed sampler  
-- Fixed number of steps  
-- Fixed resolution  
-- No randomness  
-- No external dependencies beyond the model
-
-### 4.2 Deterministic Configuration  
-Recommended defaults:
-
-- Resolution: `1920x1080`  
-- Steps: `20–30`  
-- Sampler: `Euler` or `DDIM`  
-- Seed: fixed integer (e.g., `42`)  
-- CFG scale: low (e.g., `3–5`) to maintain minimalism
-
-These values must not change across updates unless explicitly versioned.
-
-### 4.3 Renderer Responsibilities  
-The renderer must:
-
-1. Accept the deterministic prompt  
-2. Produce a single image  
-3. Apply no post‑processing beyond resizing  
-4. Return the image path to the wallpaper module
-
-### 4.4 Renderer Independence  
-The DSL is renderer‑agnostic.  
-Any future renderer (shader, procedural engine, LoRA‑based model) must follow the same interpreter contract:
-
-- deterministic  
-- symbolic input  
-- stable output  
-- no creative deviation
-
----
-
-## 5. Output Handling
-
-### 5.1 File Format  
-The renderer must output:
-
-- PNG format  
-- sRGB colour  
-- No metadata beyond resolution
-
-### 5.2 File Location  
-Output path is defined in `config.json`:
+or
 
 ```json
-"wallpaper_output": "output/wallpaper.png"
+{
+  "renderer_mode": "generative"   // non-deterministic
+}
 ```
 
-### 5.3 Handoff  
-The wallpaper module receives the final image path and applies it to the OS.
+If omitted, **procedural** is the default.
 
 ---
 
-## 6. Error Handling  
-Rendering errors must:
+# 5. Determinism Summary
 
-- never crash the main loop  
-- return a structured error object  
-- allow the system to retry on next cycle  
-- never produce partial or corrupted images
+| Rendering Mode | Deterministic? | Notes |
+|----------------|----------------|-------|
+| **Procedural compositor** | **Yes** | Same DSL + same base image → identical PNG |
+| **Generative reference‑image** | **No** | Diffusion introduces unavoidable nondeterminism |
 
-If rendering fails, the wallpaper should not be updated.
-
----
-
-## 7. Determinism Requirements  
-The renderer must guarantee:
-
-1. Same DSL → same prompt  
-2. Same prompt → same model invocation  
-3. Same model invocation → same image  
-4. No randomness in any stage  
-5. No external factors influencing output
-
-This ensures the system behaves like a **renderer**, not a generative artist.
+There is no “partially deterministic” mode.  
+There is no “mostly deterministic” mode.  
+Determinism is binary.
 
 ---
 
-## 8. Extensibility  
-Future rendering extensions may include:
+# 6. Integration With DSL  
+Both rendering modes consume the same DSL JSON.
 
-- seasonal colour palettes  
-- star density mapping  
-- moon glow intensity  
-- cloud type variation  
-- horizon visibility rules  
-- custom LoRA for consistent style
+The DSL remains:
 
-Extensions must be:
+- symbolic  
+- declarative  
+- renderer‑agnostic  
+- stable across versions  
 
-- deterministic  
-- versioned  
-- backward‑compatible with DSL v1.0
-
-For roadmap details:  
-- roadmap
+Renderers must ignore unknown fields and treat the DSL as the authoritative semantic description.
 
 ---
 
-## 9. Summary  
-The rendering pipeline is a deterministic interpreter of the scene DSL.  
-It transforms symbolic sky state into a minimal, consistent image using a tiny model.  
-This separation of DSL → prompt → render ensures clarity, stability, and extensibility across future versions.
+# 7. Summary  
+Dynamic Island Wallpaper supports two rendering pipelines:
+
+- **Procedural (deterministic)** — stable, reproducible, testable  
+- **Generative (non‑deterministic)** — creative, variable, diffusion‑based  
+
+Your architecture now explicitly acknowledges the determinism boundary.
 
 ---
 
