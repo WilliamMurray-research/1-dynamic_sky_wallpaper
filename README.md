@@ -78,6 +78,7 @@ dynamic_sky_wallpaper/
 │
 ├── config.json                # User configuration
 ├── README.md                  # Project overview
+├── CHANGELOG.md 
 └── LICENSE
 
 ```
