@@ -4,7 +4,7 @@ The system polls real‑world astronomical and weather data, compresses it into 
 
 ---
 
-## ✨ Overview  
+## Overview  
 Dynamic Sky Wallpaper creates a living wallpaper that reflects:
 
 - Real sun position (azimuth + altitude)  
@@ -26,7 +26,7 @@ This keeps GPU usage extremely low while producing a continuously updated sky.
 
 ---
 
-## 🧭 Features  
+## Features  
 - Real astronomical positioning  
 - Seasonal solar altitude  
 - Rule‑based sky colour gradients  
@@ -40,7 +40,7 @@ This keeps GPU usage extremely low while producing a continuously updated sky.
 
 ---
 
-## 📦 Project Structure  
+## Project Structure  
 ```
 dynamic-sky-wallpaper/
 │
@@ -66,7 +66,7 @@ dynamic-sky-wallpaper/
 
 ---
 
-## 🧩 Scene DSL Specification (v1.0)  
+## Scene DSL Specification (v1.0)  
 The scene DSL is a symbolic description of the sky.  
 It is expressed in JSON, but JSON is only the carrier — the DSL is the **language**.
 
@@ -105,7 +105,7 @@ For deeper exploration:
 
 ---
 
-## 🔧 How It Works
+## How It Works
 
 ### 1. API Polling  
 Every update cycle, the system fetches:
@@ -173,7 +173,7 @@ The generated image is saved and applied using OS‑specific commands.
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Requirements  
 - Python 3.10+  
@@ -194,7 +194,7 @@ python main.py
 
 ---
 
-## 🧩 Configuration  
+## Configuration  
 `config.json`:
 
 ```json
@@ -211,7 +211,7 @@ python main.py
 
 ---
 
-## 🌙 Rendering Rules
+## Rendering Rules
 
 ### Sun  
 - Sunrise → bottom right  
@@ -239,7 +239,7 @@ python main.py
 
 ---
 
-## 🛠️ Roadmap  
+## Roadmap  
 - Seasonal palettes  
 - Star density based on solar elevation  
 - Tide‑driven shoreline height  
@@ -254,7 +254,7 @@ Explore generalisation:
 
 ---
 
-## 📄 License  
+## License  
 MIT License
 
 ---
