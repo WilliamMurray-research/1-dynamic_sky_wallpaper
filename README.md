@@ -1,4 +1,7 @@
 # Dynamic Island Wallpaper  
+
+> Note: This project is intentionally scoped as a personal learning exercise in digital‑twin design, symbolic scene languages, Prolog rule systems, and deterministic rendering pipelines. It is architecturally opinionated but exploratory, serving as a sandbox for developing and refining system‑design skills.
+
 A minimalist, data‑driven **digital twin of an island**, rendered as a dynamic desktop wallpaper.  
 The system computes real‑world astronomical data locally, fetches environmental data from the **BOM API**, compresses everything into a symbolic **scene DSL**, and renders a consistent island image using a deterministic **procedural compositor**.  
 An optional generative mode can apply a diffusion‑based transformation to a reference image, but this mode is **not deterministic**.
@@ -27,8 +30,6 @@ Every 5 minutes, the system:
 6. The final image is set as the desktop wallpaper  
 
 This produces a stable, ambient, low‑GPU digital twin of your day.
-
-> Note: This project is intentionally scoped as a personal learning exercise in digital‑twin design, symbolic scene languages, Prolog rule systems, and deterministic rendering pipelines. It is architecturally opinionated but exploratory, serving as a sandbox for developing and refining system‑design skills.
 
 ---
 
