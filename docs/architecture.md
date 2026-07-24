@@ -1,212 +1,263 @@
-# Architecture Overview
+# Architecture  
+Dynamic Island Wallpaper is a deterministic **telemetry → semantics → rendering** pipeline.  
+It produces a symbolic JSON scene using **Prolog**, then renders a stable island wallpaper using a **procedural compositor**.
 
-## 1. Purpose  
-This document describes the architecture of the Dynamic Sky Wallpaper system.  
-The system is built as a **minimal digital twin**: real‑world telemetry is transformed into a symbolic **scene DSL**, interpreted deterministically, and rendered into a sky image using a tiny local model.
-
-The architecture is intentionally modular, extensible, and easy to reason about.
-
----
-
-## 2. High‑Level Pipeline  
-The system follows a five‑stage pipeline:
-
-1. **Telemetry** — Fetch real‑world data  
-2. **Interpretation** — Convert raw data into semantic categories  
-3. **Scene DSL** — Produce a symbolic JSON description  
-4. **Prompt Generation** — Convert DSL → deterministic text prompt  
-5. **Rendering** — Generate the sky image using a tiny model  
-6. **Wallpaper Update** — Apply the rendered image to the OS
-
-This pipeline is deterministic: identical telemetry produces identical output.
-
-For deeper exploration:  
-- digital twin architecture  
-- scene DSL
-
----
-
-## 3. Module Layout  
-All implementation lives under `src/`:
+The system is intentionally modular:
 
 ```
-src/
-│
-├── api/            # Telemetry layer
-├── scene/          # Interpretation + DSL construction
-├── model/          # Prompt + rendering
-├── wallpaper/      # OS integration
-└── main.py         # Pipeline orchestration
+Telemetry → Prolog Semantic Engine → Scene DSL (JSON) → Renderer → Wallpaper
 ```
 
-Each module has a single responsibility.
+Each layer is isolated, testable, and replaceable.
 
 ---
 
-## 4. Telemetry Layer (`src/api/`)  
-The telemetry layer fetches real‑world data:
+## 1. System Overview  
+The architecture is built around four principles:
 
-- Solar altitude and azimuth  
-- Moon altitude and phase  
-- Weather conditions  
-- Optional tide height  
+- **Determinism** — identical inputs produce identical outputs  
+- **Symbolic Semantics** — all meaning is encoded in the DSL  
+- **Renderer Independence** — any renderer can consume the DSL  
+- **Ambient Cues** — the wallpaper conveys time and environment passively  
 
-Modules:
+The system is not a generative art pipeline.  
+It is a **digital twin** of a small island environment.
 
-- `sun_moon.py`  
-- `weather.py`  
-- `tides.py`  
-
-Telemetry must return **raw numeric or categorical data**, not symbolic DSL values.
-
-For details:  
-- telemetry
+Explore:  
+- scene DSL  
+- rule engine
 
 ---
 
-## 5. Interpretation Layer (`src/scene/`)  
-This layer converts raw telemetry into **semantic categories** using deterministic rules.
+## 2. Telemetry Layer  
+Telemetry is computed **locally**, without external APIs.
 
-Modules:
+### 2.1 Astronomy  
+The system computes:
 
-- `rules.py` — semantic mapping functions  
-- `builder.py` — constructs the final DSL JSON
+- solar altitude  
+- solar azimuth  
+- lunar altitude  
+- lunar phase  
+- sunrise/sunset times  
+
+These values are derived from standard astronomical formulas.
+
+### 2.2 Environment  
+The system computes:
+
+- tide height  
+- wind speed  
+- weather state  
+
+These are simple deterministic formulas or local heuristics.
+
+### 2.3 Output  
+Telemetry produces **raw numeric facts**, never symbolic categories.
+
+Example (Python → Prolog facts):
+
+```
+sun_alt(12.4).
+sun_az(145.0).
+moon_alt(-5.0).
+moon_phase(0.62).
+tide_height(0.8).
+wind_speed(4.2).
+weather_code(2).
+```
+
+Explore:  
+- astronomy computation
+
+---
+
+## 3. Prolog Semantic Engine  
+Prolog is the **authoritative semantic layer**.
+
+It receives raw telemetry and produces:
+
+- symbolic categories  
+- constraint‑checked scene state  
+- complete DSL JSON
+
+### 3.1 Symbolic Bucketing  
+Prolog converts numeric telemetry into symbolic DSL fields:
+
+- `sun_height`  
+- `sunposition`  
+- `sky_mode`  
+- `moon`  
+- `stars`  
+- `tide_state`  
+- `wind_strength`  
+- `wave_intensity`  
+- `island_palette`  
+- `daily_state`
+
+### 3.2 Constraint Checking  
+Prolog enforces rules such as:
+
+- if `sky_mode = night` → `sun_height = none`  
+- if `moon = none` → `stars = true` allowed  
+- if `wind_strength = strong` → `wave_intensity ≠ calm`  
+- if `Time >= SleepTime` → `daily_state = sleep_time`
+
+### 3.3 JSON Emission  
+Prolog emits the final DSL JSON as a single atom.
 
 Example:
 
-```python
-scene = {
-    "sunposition": rules.sun_position(azimuth, altitude),
-    "sun_height": rules.sun_height(altitude),
-    "sky_mode": rules.sky_mode(altitude, azimuth),
-    "weather": rules.weather_mode(weather_data),
-    "moon": rules.moon_mode(moon_alt, moon_phase),
-    "stars": rules.star_visibility(moon_alt, moon_phase, altitude),
-    "version": "1.0"
+```json
+{
+  "sunposition": "topright",
+  "sun_height": "high",
+  "sky_mode": "day",
+  "weather": "clear",
+  "moon": "none",
+  "stars": false,
+
+  "tide_state": "medium",
+  "wind_strength": "breeze",
+  "wave_intensity": "gentle",
+  "island_palette": "day",
+
+  "daily_state": "break_time",
+
+  "version": "0.0.1"
 }
 ```
 
-This layer is the **interpreter** for the DSL.
+Explore:  
+- Prolog JSON emitter
 
 ---
 
-## 6. Scene DSL (`docs/dsl-spec.md`)  
-The DSL is a symbolic description of the sky.  
-It is stable, versioned, and designed for forward‑compatible extension.
+## 4. Scene DSL (v0.0.1)  
+The DSL is a **symbolic snapshot** of the island environment.
 
-The DSL is the **contract** between the interpretation layer and the rendering layer.
+It contains no numeric telemetry and no rendering instructions.  
+It is purely declarative.
 
-For full specification:  
-- DSL spec
+Fields include:
+
+- sky state  
+- weather  
+- tide  
+- wind  
+- waves  
+- palette  
+- daily rhythm  
+
+Full spec:  
+- DSL v0.0.1
 
 ---
 
-## 7. Prompt Generation (`src/model/prompt.py`)  
-The DSL is converted into a deterministic text prompt.
+## 5. Procedural Renderer  
+The renderer consumes the DSL JSON and produces a deterministic PNG.
 
-Rules:
+### 5.1 Base Image  
+A single base PNG contains:
 
-- No randomness  
-- No creative phrasing  
-- No synonyms  
-- One‑to‑one mapping from DSL → prompt lines
+- island silhouette  
+- ocean baseline  
+- palm tree neutral pose  
+- sky gradient placeholders  
 
-Example:
+### 5.2 Deterministic Overlays  
+The renderer applies overlays based on DSL fields:
+
+- **waterline mask** → `tide_state`  
+- **wave texture** → `wave_intensity`  
+- **tree lean transform** → `wind_strength`  
+- **palette recolouring** → `island_palette`  
+- **sun/moon/stars** → sky fields  
+- **weather overlays** → `weather`  
+- **character animations** → `daily_state`
+
+### 5.3 Animation System  
+Animations are frame sequences or sprite sheets:
+
+- morning coffee  
+- sitting down to work  
+- callisthenics  
+- evening wave  
+- campfire extinguish  
+
+The renderer composites these frames on top of the base scene.
+
+Explore:  
+- procedural renderer  
+- animation system
+
+---
+
+## 6. Wallpaper Module  
+The final PNG is written to disk and applied using OS‑specific commands.
+
+This module is intentionally simple and replaceable.
+
+---
+
+## 7. Data Flow Diagram
 
 ```
-Minimalist sky wallpaper.
-Day gradient.
-Sun high in the top right.
-Clear weather.
-Moon: none.
-Stars: false.
++------------------+
+|   Telemetry      |
+| (astronomy/env)  |
++--------+---------+
+         |
+         v
++------------------+
+|   Prolog Engine  |
+|  (semantics)     |
++--------+---------+
+         |
+         v
++------------------+
+|   Scene DSL      |
+|    (JSON)        |
++--------+---------+
+         |
+         v
++------------------+
+|   Renderer       |
+| (procedural)     |
++--------+---------+
+         |
+         v
++------------------+
+|   Wallpaper      |
++------------------+
 ```
 
-This ensures consistent rendering across updates.
+---
+
+## 8. Versioning  
+The architecture follows strict versioning rules:
+
+- DSL versions are immutable  
+- renderers must ignore unknown fields  
+- Prolog rules evolve without breaking old DSLs  
+- telemetry formulas remain stable  
 
 ---
 
-## 8. Rendering Layer (`src/model/render.py`)  
-A tiny local model (e.g., SD‑Tiny) renders the sky image.
+## 9. Summary  
+Dynamic Island Wallpaper is a deterministic digital twin built from:
 
-Requirements:
+- local telemetry  
+- Prolog semantics  
+- symbolic DSL  
+- procedural rendering  
+- ambient daily‑rhythm cues  
 
-- Fixed resolution  
-- Fixed sampler  
-- Fixed number of steps  
-- Deterministic seed  
-- No stylistic variation unless configured
-
-The model acts as a **renderer**, not a creative generator.
-
-For deeper exploration:  
-- generative renderer design
+It is designed for stability, clarity, and long‑term extensibility.
 
 ---
 
-## 9. Wallpaper Layer (`src/wallpaper/`)  
-This layer applies the rendered image to the OS.
 
-- macOS: `osascript`  
-- Linux: `gsettings`, `feh`, or DE‑specific commands  
-- Windows: registry + `ctypes`
+- **dsl-spec.md**  
 
-This module must be isolated so users can extend or replace it.
-
----
-
-## 10. Main Orchestrator (`src/main.py`)  
-The main loop coordinates the pipeline:
-
-1. Load config  
-2. Fetch telemetry  
-3. Build DSL  
-4. Generate prompt  
-5. Render image  
-6. Set wallpaper  
-7. Sleep until next update
-
-This file contains no business logic — only orchestration.
-
----
-
-## 11. Extensibility  
-The architecture supports:
-
-- New telemetry sources  
-- New DSL fields  
-- New rendering rules  
-- New palettes  
-- New output formats  
-- Multi‑domain digital twins  
-
-Extensions must follow DSL versioning rules.
-
-For generalisation:  
-- multi‑domain twin engine
-
----
-
-## 12. Design Principles  
-The architecture follows four principles:
-
-### 1. **Determinism**  
-Same input → same output.
-
-### 2. **Separation of Concerns**  
-Telemetry, interpretation, rendering, and OS integration are isolated.
-
-### 3. **Symbolic Compression**  
-Raw data is reduced to a small, stable DSL.
-
-### 4. **Renderer Independence**  
-Any renderer (tiny model, shader, procedural engine) can interpret the DSL.
-
----
-
-## 13. Summary  
-Dynamic Sky Wallpaper is a modular digital‑twin system built around a symbolic DSL.  
-Its architecture is designed for clarity, determinism, and extensibility, enabling future growth into multi‑domain telemetry→DSL→render pipelines.
-
----
-
+Just tell me which file you want next.
