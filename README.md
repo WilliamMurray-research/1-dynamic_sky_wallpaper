@@ -28,6 +28,8 @@ Every 5 minutes, the system:
 
 This produces a stable, ambient, low‑GPU digital twin of your day.
 
+> Note: This project is intentionally scoped as a personal learning exercise in digital‑twin design, symbolic scene languages, Prolog rule systems, and deterministic rendering pipelines. It is architecturally opinionated but exploratory, serving as a sandbox for developing and refining system‑design skills.
+
 ---
 
 ## Features  
@@ -107,7 +109,6 @@ dynamic_island_wallpaper/
 ├── README.md                  # Project overview & quickstart
 ├── CHANGELOG.md               # Version history
 └── LICENSE                    # Open-source license
-
 ```
 
 ---
@@ -217,8 +218,10 @@ No generative model.
 No randomness.  
 Perfect style consistency.
 
+---
+
 ### Optional Generative Mode (Non‑Deterministic)  
-If enabled, a diffusion‑based img2img transformation is applied to a reference image, as a style‑anchored, telemetry‑driven transformation layer on top of a symbolic digital twin.  
+If enabled, a diffusion‑based img2img transformation is applied to a reference image, acting as a **style‑anchored, telemetry‑driven transformation layer** on top of the symbolic digital twin.  
 This mode is **not deterministic**, even with fixed seeds.
 
 ---
