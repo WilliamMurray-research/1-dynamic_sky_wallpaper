@@ -1,71 +1,82 @@
-# Dynamic Sky Wallpaper  
-A minimalist, data‑driven **digital twin of the sky**, rendered as a dynamic desktop wallpaper.  
-The system polls real‑world astronomical and weather data, compresses it into a symbolic **scene DSL**, and renders a consistent sky image using a tiny local generative model.
+# Dynamic Island Wallpaper  
+A minimalist, data‑driven **digital twin of an island**, rendered as a dynamic desktop wallpaper.  
+The system computes real‑world astronomical and environmental data locally, compresses it into a symbolic **scene DSL**, and renders a consistent island image using a deterministic **procedural compositor**.
 
 ---
 
 ## Overview  
-Dynamic Sky Wallpaper creates a living wallpaper that reflects:
+Dynamic Island Wallpaper creates a living wallpaper that reflects:
 
 - Real sun position (azimuth + altitude)  
-- Seasonal sun height  
-- Dawn/dusk colour transitions  
+- Real moon position and phase  
+- Tide height  
+- Wind strength  
+- Wave intensity  
 - Weather conditions  
-- Moon visibility and phase  
-- Star visibility when the moon is absent  
+- Time‑of‑day palette (day/sunset/night)  
+- Daily rhythm animations (coffee, work start, callisthenics, evening, sleep)
 
 Every 5 minutes, the system:
 
-1. Fetches real‑world data  
-2. Converts it into a symbolic **scene description**  
-3. Generates a deterministic prompt  
-4. Renders a minimalist sky image using a tiny model  
-5. Sets the image as the desktop wallpaper  
+1. Computes sun & moon position locally  
+2. Computes tide, wind, and weather state  
+3. Passes raw telemetry to Prolog  
+4. Prolog emits a symbolic **scene DSL JSON**  
+5. The renderer applies deterministic overlays to a base island image  
+6. The final image is set as the desktop wallpaper  
 
-This keeps GPU usage extremely low while producing a continuously updated sky.
+This produces a stable, ambient, low‑GPU digital twin of your day.
 
 ---
 
 ## Features  
-- Real astronomical positioning  
-- Seasonal solar altitude  
-- Rule‑based sky colour gradients  
-- Weather‑driven cloud and rain rendering  
-- Moon phase logic  
-- Starfield when moon is absent  
-- Tiny model inference (<1s)  
+- Local astronomical computation (no APIs)  
+- Deterministic symbolic scene DSL  
+- Tide‑driven shoreline  
+- Wind‑driven palm tree motion  
+- Wave intensity based on wind + weather  
+- Time‑of‑day palette (day/sunset/night)  
+- Character animations for daily rhythm:  
+  - Morning coffee  
+  - Work start  
+  - Break‑time callisthenics  
+  - Evening wave  
+  - Sleep‑time campfire extinguish  
+- Procedural rendering (no generative model)  
 - Cross‑platform wallpaper setting  
-- Formalised **scene DSL** for deterministic rendering  
 - Extensible digital‑twin architecture  
 
 ---
 
 ## Project Structure  
 ```
-dynamic_sky_wallpaper/
+dynamic_island_wallpaper/
 │
 ├── docs/
-│   ├── motivation.md             # Project motivation
-│   ├── dsl-spec.md            # Formal scene DSL specification
+│   ├── motivation.md          # Project motivation
+│   ├── dsl-spec.md            # Formal scene DSL specification (v0.0.1)
 │   ├── architecture.md        # System architecture & data flow
-│   ├── telemetry.md           # Sun/moon/weather/tide data sources
-│   ├── rendering.md           # Prompt + tiny-model rendering pipeline
+│   ├── telemetry.md           # Local astronomy + environment formulas
+│   ├── rendering.md           # Procedural compositor & animation system
 │   ├── roadmap.md             # Planned extensions
 │   └── contributing.md        # Guidelines for contributors
 │
 ├── src/
-│   ├── api/
-│   │   ├── sun_moon.py        # Solar & lunar data fetch
-│   │   ├── weather.py         # Weather API fetch
-│   │   └── tides.py           # Optional tide data
+│   ├── telemetry/
+│   │   ├── astronomy.py       # Sun/moon position + phase (local computation)
+│   │   ├── weather.py         # Local weather logic
+│   │   └── tide.py            # Tide height computation
 │   │
-│   ├── scene/
-│   │   ├── builder.py         # Telemetry → DSL scene JSON
-│   │   └── rules.py           # Semantic rules (sun pos, sky mode, etc.)
+│   ├── prolog/
+│   │   ├── rules.pl           # Telemetry → symbolic scene rules
+│   │   └── emit_json.pl       # Prolog → DSL JSON emitter
 │   │
-│   ├── model/
-│   │   ├── prompt.py          # DSL → deterministic prompt
-│   │   └── render.py          # Tiny model renderer
+│   ├── renderer/
+│   │   ├── compositor.py      # Base image + deterministic overlays
+│   │   ├── palette.py         # Day/sunset/night recolouring
+│   │   ├── waves.py           # Wave intensity overlays
+│   │   ├── tree.py            # Palm tree wind transform
+│   │   └── animations.py      # Daily rhythm animations
 │   │
 │   ├── wallpaper/
 │   │   └── setter.py          # OS-specific wallpaper update
@@ -75,19 +86,19 @@ dynamic_sky_wallpaper/
 │   │
 │   └── main.py                # Main loop
 │
+├── assets/                    # Base island image + animation frames
 ├── tests/                     # Unit tests for DSL, rules, rendering
 │
 ├── config.json                # User configuration
 ├── README.md                  # Project overview
-├── CHANGELOG.md 
+├── CHANGELOG.md
 └── LICENSE
-
 ```
 
 ---
 
-## Scene DSL Specification (v1.0)  
-The scene DSL is a symbolic description of the sky.  
+## Scene DSL Specification (v0.0.1)  
+The scene DSL is a symbolic description of the island environment.  
 It is expressed in JSON, but JSON is only the carrier — the DSL is the **language**.
 
 ### Required Fields  
@@ -99,7 +110,15 @@ It is expressed in JSON, but JSON is only the carrier — the DSL is the **langu
   "weather": "<enum>",
   "moon": "<enum>",
   "stars": "<boolean>",
-  "version": "1.0"
+
+  "tide_state": "<enum>",
+  "wind_strength": "<enum>",
+  "wave_intensity": "<enum>",
+  "island_palette": "<enum>",
+
+  "daily_state": "<enum>",
+
+  "version": "0.0.1"
 }
 ```
 
@@ -111,85 +130,80 @@ It is expressed in JSON, but JSON is only the carrier — the DSL is the **langu
 - **moon** — `"none" | "crescent" | "half" | "gibbous" | "full"`  
 - **stars** — `true | false`  
 
-### Semantic Rules  
-- Sun below horizon → `sunposition = "none"`  
-- Solar altitude buckets → `low`, `medium`, `high`  
-- Dawn/dusk determined by altitude ± azimuth  
-- Moon below horizon → `moon = "none"`  
-- Stars visible only when `moon = "none"` and `sky_mode = "night"`  
+Island fields:  
+- **tide_state** — `"low" | "medium" | "high"`  
+- **wind_strength** — `"none" | "breeze" | "windy" | "strong"`  
+- **wave_intensity** — `"calm" | "gentle" | "rough" | "storm"`  
+- **island_palette** — `"day" | "sunset" | "night"`  
 
-For deeper exploration:  
-- scene DSL  
-- rule engine  
-- digital twin architecture
+Daily rhythm:  
+- **daily_state** —  
+  `"morning_start" | "work_start" | "day_progress" | "break_time" | "evening" | "sleep_time"`
 
 ---
 
 ## How It Works
 
-### 1. API Polling  
-Every update cycle, the system fetches:
+### 1. Local Telemetry  
+Every update cycle, the system computes:
 
 - Solar altitude & azimuth  
 - Moon altitude & phase  
-- Weather conditions  
-- Optional tide height  
+- Tide height  
+- Wind speed  
+- Weather state  
 
-APIs may include astronomical services, weather providers, or local computation libraries.
+No external APIs.  
+All formulas are local and deterministic.
 
 ---
 
-### 2. Scene Description (DSL)  
+### 2. Prolog Scene Description (DSL)  
 Example:
 
 ```json
 {
-  "sunposition": "bottomright",
-  "sun_height": "low",
-  "sky_mode": "dawn",
-  "weather": "approaching_rain",
+  "sunposition": "topright",
+  "sun_height": "high",
+  "sky_mode": "day",
+  "weather": "clear",
   "moon": "none",
-  "stars": true,
-  "version": "1.0"
+  "stars": false,
+
+  "tide_state": "medium",
+  "wind_strength": "breeze",
+  "wave_intensity": "gentle",
+  "island_palette": "day",
+
+  "daily_state": "break_time",
+
+  "version": "0.0.1"
 }
 ```
 
-This symbolic state is the **digital twin** of the sky.
+This symbolic state is the **digital twin** of the island.
 
 ---
 
-### 3. Prompt Generation  
-The DSL is converted into a deterministic prompt:
+### 3. Procedural Rendering  
+The renderer applies deterministic overlays to a base island image:
 
-```
-Minimalist sky wallpaper.
-Soft dawn gradient.
-Sun low in the bottom right.
-Distant rain clouds.
-No moon. Stars visible.
-```
+- waterline mask (tide)  
+- wave texture (wave intensity)  
+- palm tree lean (wind)  
+- palette recolouring  
+- sun/moon/stars  
+- weather overlays  
+- character animations (daily_state)
 
-No randomness. No creativity.  
-The model acts as a **renderer**, not an artist.
-
----
-
-### 4. Tiny Model Rendering  
-A small local model (SD‑Tiny, SD‑Mini, etc.) renders:
-
-- Gradient sky  
-- Sun circle  
-- Moon phase  
-- Cloud shapes  
-- Rain streaks  
-- Stars  
-
-Inference time: ~0.5–1.5 seconds.
+No generative model.  
+No randomness.  
+Perfect style consistency.
 
 ---
 
-### 5. Wallpaper Update  
-The generated image is saved and applied using OS‑specific commands.
+### 4. Wallpaper Update  
+The final PNG is saved and applied using OS‑specific commands.
 
 ---
 
@@ -197,13 +211,13 @@ The generated image is saved and applied using OS‑specific commands.
 
 ### Requirements  
 - Python 3.10+  
-- A tiny local image model  
-- API keys (if required)
+- SWI‑Prolog  
+- Pillow or similar image library  
 
 ### Setup  
 ```
-git clone https://github.com/<yourname>/dynamic-sky-wallpaper
-cd dynamic-sky-wallpaper
+git clone https://github.com/<yourname>/dynamic-island-wallpaper
+cd dynamic-island-wallpaper
 pip install -r requirements.txt
 ```
 
@@ -224,7 +238,9 @@ python main.py
     "lon": 138.017
   },
   "updateintervalminutes": 5,
-  "model_path": "models/sd-tiny",
+  "sleep_time": "23:00",
+  "work_start": "09:00",
+  "break_times": ["11:00", "15:00"],
   "wallpaper_output": "output/wallpaper.png"
 }
 ```
@@ -233,44 +249,32 @@ python main.py
 
 ## Rendering Rules
 
-### Sun  
-- Sunrise → bottom right  
-- Sunset → bottom left  
-- Summer → high arc  
-- Winter → low arc  
+### Sun & Moon  
+- Local astronomy formulas  
+- Deterministic bucketing into symbolic fields  
 
-### Sky  
-- Dawn/dusk → warm gradient  
-- Day → blue gradient  
-- Night → dark blue/black  
+### Island  
+- Tide → waterline height  
+- Wind → palm tree lean  
+- Waves → ocean texture  
+- Palette → recolouring  
 
-### Weather  
-- Clear → no clouds  
-- Rain → rain streaks  
-- Approaching rain → dark horizon clouds  
-
-### Moon  
-- Below horizon → none  
-- New moon → none  
-- Otherwise → correct phase  
-
-### Stars  
-- Visible only when moon is absent  
+### Daily Rhythm  
+- Morning → coffee animation  
+- Work start → sitting animation  
+- Break → callisthenics  
+- Evening → wave  
+- Sleep → campfire extinguish  
 
 ---
 
 ## Roadmap  
 - Seasonal palettes  
-- Star density based on solar elevation  
-- Tide‑driven shoreline height  
-- Custom LoRA for consistent style  
-- GPU/CPU fallback modes  
+- Cloud type classification  
+- Character emotion states  
 - Multi‑domain digital‑twin support  
-- Generalised telemetry→DSL pipeline  
-
-Explore generalisation:  
-- digital twin framework  
-- multi‑domain twin engine
+- Prolog explain‑why queries  
+- Smooth animation interpolation  
 
 ---
 
