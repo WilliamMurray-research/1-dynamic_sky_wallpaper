@@ -218,7 +218,7 @@ No randomness.
 Perfect style consistency.
 
 ### Optional Generative Mode (Non‑Deterministic)  
-If enabled, a diffusion‑based img2img transformation is applied to a reference image.  
+If enabled, a diffusion‑based img2img transformation is applied to a reference image, as a style‑anchored, telemetry‑driven transformation layer on top of a symbolic digital twin.  
 This mode is **not deterministic**, even with fixed seeds.
 
 ---
