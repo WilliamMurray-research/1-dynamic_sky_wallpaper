@@ -1,6 +1,7 @@
 # Dynamic Island Wallpaper  
 A minimalist, data‑driven **digital twin of an island**, rendered as a dynamic desktop wallpaper.  
-The system computes real‑world astronomical and environmental data locally, compresses it into a symbolic **scene DSL**, and renders a consistent island image using a deterministic **procedural compositor**.
+The system computes real‑world astronomical data locally, fetches environmental data from the **BOM API**, compresses everything into a symbolic **scene DSL**, and renders a consistent island image using a deterministic **procedural compositor**.  
+An optional generative mode can apply a diffusion‑based transformation to a reference image, but this mode is **not deterministic**.
 
 ---
 
@@ -9,17 +10,17 @@ Dynamic Island Wallpaper creates a living wallpaper that reflects:
 
 - Real sun position (azimuth + altitude)  
 - Real moon position and phase  
-- Tide height  
-- Wind strength  
+- Tide height (BOM)  
+- Wind strength (BOM)  
+- Weather conditions (BOM)  
 - Wave intensity  
-- Weather conditions  
 - Time‑of‑day palette (day/sunset/night)  
 - Daily rhythm animations (coffee, work start, callisthenics, evening, sleep)
 
 Every 5 minutes, the system:
 
 1. Computes sun & moon position locally  
-2. Computes tide, wind, and weather state  
+2. Fetches tide, wind, and weather from the BOM API  
 3. Passes raw telemetry to Prolog  
 4. Prolog emits a symbolic **scene DSL JSON**  
 5. The renderer applies deterministic overlays to a base island image  
@@ -30,7 +31,8 @@ This produces a stable, ambient, low‑GPU digital twin of your day.
 ---
 
 ## Features  
-- Local astronomical computation (no APIs)  
+- Local astronomical computation  
+- BOM‑derived environmental telemetry  
 - Deterministic symbolic scene DSL  
 - Tide‑driven shoreline  
 - Wind‑driven palm tree motion  
@@ -42,7 +44,8 @@ This produces a stable, ambient, low‑GPU digital twin of your day.
   - Break‑time callisthenics  
   - Evening wave  
   - Sleep‑time campfire extinguish  
-- Procedural rendering (no generative model)  
+- **Procedural rendering (deterministic)**  
+- **Optional generative reference‑image mode (non‑deterministic)**  
 - Cross‑platform wallpaper setting  
 - Extensible digital‑twin architecture  
 
@@ -56,16 +59,16 @@ dynamic_island_wallpaper/
 │   ├── motivation.md          # Project motivation
 │   ├── dsl-spec.md            # Formal scene DSL specification (v0.0.1)
 │   ├── architecture.md        # System architecture & data flow
-│   ├── telemetry.md           # Local astronomy + environment formulas
-│   ├── rendering.md           # Procedural compositor & animation system
+│   ├── telemetry.md           # Astronomy + BOM telemetry
+│   ├── rendering.md           # Procedural compositor & generative mode
 │   ├── roadmap.md             # Planned extensions
 │   └── contributing.md        # Guidelines for contributors
 │
 ├── src/
 │   ├── telemetry/
 │   │   ├── astronomy.py       # Sun/moon position + phase (local computation)
-│   │   ├── weather.py         # Local weather logic
-│   │   └── tide.py            # Tide height computation
+│   │   ├── bom_weather.py     # BOM weather + wind
+│   │   └── bom_tide.py        # BOM tide height
 │   │
 │   ├── prolog/
 │   │   ├── rules.pl           # Telemetry → symbolic scene rules
@@ -144,21 +147,23 @@ Daily rhythm:
 
 ## How It Works
 
-### 1. Local Telemetry  
-Every update cycle, the system computes:
+### 1. Telemetry  
+Every update cycle, the system gathers:
 
-- Solar altitude & azimuth  
-- Moon altitude & phase  
-- Tide height  
-- Wind speed  
-- Weather state  
+- Solar altitude & azimuth (local computation)  
+- Moon altitude & phase (local computation)  
+- Tide height (BOM API)  
+- Wind speed (BOM API)  
+- Weather state (BOM API)
 
-No external APIs.  
-All formulas are local and deterministic.
+Astronomy is deterministic.  
+BOM data is treated as deterministic input.
 
 ---
 
 ### 2. Prolog Scene Description (DSL)  
+Prolog converts raw telemetry into symbolic categories and emits the DSL JSON.
+
 Example:
 
 ```json
@@ -185,7 +190,7 @@ This symbolic state is the **digital twin** of the island.
 
 ---
 
-### 3. Procedural Rendering  
+### 3. Procedural Rendering (Deterministic)  
 The renderer applies deterministic overlays to a base island image:
 
 - waterline mask (tide)  
@@ -199,6 +204,10 @@ The renderer applies deterministic overlays to a base island image:
 No generative model.  
 No randomness.  
 Perfect style consistency.
+
+### Optional Generative Mode (Non‑Deterministic)  
+If enabled, a diffusion‑based img2img transformation is applied to a reference image.  
+This mode is **not deterministic**, even with fixed seeds.
 
 ---
 
