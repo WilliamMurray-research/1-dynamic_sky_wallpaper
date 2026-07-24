@@ -1,175 +1,161 @@
-# Scene DSL Specification (v1.0)
+# Scene DSL Extension (v1.1)
 
 ## 1. Purpose  
-The Scene DSL defines a **symbolic description of the sky** used by the rendering pipeline.  
-It compresses real‑world telemetry (sun, moon, weather, time) into a deterministic, interpretable JSON structure.  
-The DSL is stable, versioned, and designed for forward‑compatible extension.
+DSL v1.1 expands the sky‑only digital twin into an **island‑based environmental twin**.  
+It introduces symbolic fields for:
+
+- tide height  
+- wind strength  
+- wave intensity  
+- palette mode (day/sunset/night)
+
+These fields support your v1 cartoon‑island renderer.
 
 ---
 
-## 2. Document Structure  
-A valid scene description is a JSON object containing the following required fields:
+## 2. New Fields (v1.1)
+
+### 2.1 **`tide_state`**  
+Symbolic tide height.
+
+**Domain:**  
+`"low" | "medium" | "high"`
+
+**Semantics:**  
+Derived from raw tide telemetry (`tide_height`).
+
+**Interpreter Contract:**  
+Controls waterline position relative to the island.
+
+---
+
+### 2.2 **`wind_strength`**  
+Symbolic wind intensity.
+
+**Domain:**  
+`"none" | "breeze" | "windy" | "strong"`
+
+**Semantics:**  
+Derived from wind speed telemetry.
+
+**Interpreter Contract:**  
+Controls palm tree lean angle and motion cues.
+
+---
+
+### 2.3 **`wave_intensity`**  
+Symbolic ocean surface state.
+
+**Domain:**  
+`"calm" | "gentle" | "rough" | "storm"`
+
+**Semantics:**  
+Derived from wind_strength + weather.
+
+**Interpreter Contract:**  
+Controls wave height and ocean texture.
+
+---
+
+### 2.4 **`island_palette`**  
+Symbolic colour theme for the island scene.
+
+**Domain:**  
+`"day" | "sunset" | "night"`
+
+**Semantics:**  
+Derived from `sky_mode`.
+
+**Interpreter Contract:**  
+Controls global colour palette (sky, water, island).
+
+---
+
+## 3. Updated DSL Structure (v1.1)
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
+
   "sunposition": "<enum>",
   "sun_height": "<enum>",
   "sky_mode": "<enum>",
   "weather": "<enum>",
   "moon": "<enum>",
-  "stars": "<boolean>"
+  "stars": "<boolean>",
+
+  "tide_state": "<enum>",
+  "wind_strength": "<enum>",
+  "wave_intensity": "<enum>",
+  "island_palette": "<enum>"
 }
 ```
 
-Each field has a defined domain and semantics.
-
----
-
-## 3. Field Definitions
-
-### 3.1 `sunposition`
-**Domain:**  
-`"none" | "bottomleft" | "bottomright" | "midleft" | "midright" | "topleft" | "topright"`
-
-**Semantics:**  
-Symbolic quadrant derived from solar azimuth.
-
-**Interpreter contract:**  
-Renderer places the sun in the specified region.
-
----
-
-### 3.2 `sun_height`
-**Domain:**  
-`"none" | "low" | "medium" | "high"`
-
-**Semantics:**  
-Bucketed solar altitude.
-
-**Interpreter contract:**  
-Controls vertical placement, brightness, and size.
-
----
-
-### 3.3 `sky_mode`
-**Domain:**  
-`"night" | "dawn" | "day" | "dusk"`
-
-**Semantics:**  
-Colour gradient mode based on solar altitude and time.
-
-**Interpreter contract:**  
-Selects gradient palette.
-
----
-
-### 3.4 `weather`
-**Domain:**  
-`"clear" | "cloudy" | "approaching_rain" | "rain"`
-
-**Semantics:**  
-Weather visual state derived from cloud cover and precipitation probability.
-
-**Interpreter contract:**  
-Controls cloud density, horizon darkness, and rain streaks.
-
----
-
-### 3.5 `moon`
-**Domain:**  
-`"none" | "crescent" | "half" | "gibbous" | "full"`
-
-**Semantics:**  
-Visible lunar phase, derived from moon altitude and phase fraction.
-
-**Interpreter contract:**  
-Renderer draws correct moon shape or omits it.
-
----
-
-### 3.6 `stars`
-**Domain:**  
-`true | false`
-
-**Semantics:**  
-Starfield visibility.
-
-**Interpreter contract:**  
-Renderer adds stars only when `true`.
+All v1.0 fields remain unchanged.
 
 ---
 
 ## 4. Semantic Rules (Telemetry → DSL)
 
-### 4.1 Sunposition  
-- altitude < 0 → `"none"`  
-- otherwise map azimuth to quadrant
+### 4.1 Tide → `tide_state`
+- tide_height < 0.5 m → `"low"`  
+- 0.5–1.2 m → `"medium"`  
+- > 1.2 m → `"high"`
 
-### 4.2 Sun_height  
-- alt < 0° → `"none"`  
-- alt < 10° → `"low"`  
-- alt < 35° → `"medium"`  
-- alt ≥ 35° → `"high"`
+### 4.2 Wind → `wind_strength`
+- speed < 2 m/s → `"none"`  
+- 2–5 m/s → `"breeze"`  
+- 5–10 m/s → `"windy"`  
+- > 10 m/s → `"strong"`
 
-### 4.3 Sky_mode  
-- alt < −6° → `"night"`  
-- −6° ≤ alt ≤ 6° → `"dawn"` or `"dusk"`  
-- alt > 6° → `"day"`
+### 4.3 Waves → `wave_intensity`
+Derived from wind + weather:
 
-### 4.4 Weather  
-Derived from cloud cover, precipitation probability, and optionally wind.
+- wind none/breeze + clear → `"calm"`  
+- breeze/windy + cloudy → `"gentle"`  
+- windy + approaching_rain → `"rough"`  
+- strong + rain → `"storm"`
 
-### 4.5 Moon  
-- moon altitude < 0° → `"none"`  
-- phase fraction < 0.1 → `"none"`  
-- otherwise bucket phase into crescent/half/gibbous/full
-
-### 4.6 Stars  
-`true` only when:  
-- `sky_mode = "night"`  
-- `moon = "none"`
+### 4.4 Palette → `island_palette`
+- sky_mode = day → `"day"`  
+- sky_mode = dawn/dusk → `"sunset"`  
+- sky_mode = night → `"night"`
 
 ---
 
-## 5. Versioning  
-The DSL includes a mandatory `version` field.
+## 5. Backward Compatibility  
+DSL v1.1 follows strict compatibility rules:
 
-Rules:
+- All new fields are optional.  
+- v1.0 renderers ignore unknown fields.  
+- v1.0 scenes remain valid.  
+- No semantics of existing fields changed.
 
-1. New fields must be optional.  
-2. Existing fields must not change semantics.  
-3. Renderers must ignore unknown fields gracefully.  
-4. Breaking changes require a major version increment.
-
----
-
-## 6. Forward‑Compatible Extensions  
-Future versions may add:
-
-- `season_palette`  
-- `star_density`  
-- `cloud_type`  
-- `tide_state`  
-- `horizon_visibility`  
-
-Extensions must follow the versioning rules above.
+This ensures stable evolution.
 
 ---
 
-## 7. Interpreter Contract  
-Any renderer must:
+## 6. Renderer Contract Additions  
+Renderers must:
 
-1. Accept a valid DSL JSON object.  
-2. Treat all fields deterministically.  
-3. Ignore unknown fields.  
-4. Produce consistent output for identical DSL input.  
-5. Fail gracefully on malformed input.
+- adjust waterline based on `tide_state`  
+- lean palm tree based on `wind_strength`  
+- adjust wave height based on `wave_intensity`  
+- select palette based on `island_palette`  
 
-For deeper exploration:  
-- scene DSL  
-- rule engine  
-- digital twin architecture
+All behaviour must remain deterministic.
+
+---
+
+## 7. Summary  
+DSL v1.1 introduces symbolic environmental cues for your cartoon‑island renderer:
+
+- tide  
+- wind  
+- waves  
+- palette  
+
+These additions preserve the DSL’s clarity, determinism, and extensibility while enabling a richer, more meaningful ambient scene.
 
 ---
 
