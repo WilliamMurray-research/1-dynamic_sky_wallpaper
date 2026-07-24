@@ -1,7 +1,7 @@
 # Motivation
 
 ## 1. Purpose  
-Dynamic Sky Wallpaper exists to solve a specific cognitive problem: **timeblindness during deep work**.  
+Dynamic Island Wallpaper exists to solve a specific cognitive problem: **timeblindness during deep work**.  
 When fully absorbed in a task, environmental context fades — hours pass unnoticed, daylight disappears, weather changes, and the outside world shifts without registering.  
 This project provides a **non‑intrusive, ambient cue system** that restores situational awareness without breaking focus.
 
@@ -12,7 +12,7 @@ Timeblindness is not simply “forgetting the time.”
 It is losing *context*:
 
 - daylight fades without noticing  
-- rain begins but goes unseen  
+- weather changes without registering  
 - dusk becomes night without awareness  
 - long work sessions stretch far past healthy hours  
 
@@ -22,7 +22,7 @@ What’s needed is a **passive, continuous environmental indicator**.
 ---
 
 ## 3. The Solution: Ambient Environmental Cues  
-Dynamic Sky Wallpaper externalises real‑world conditions into a **symbolic sky state** using the scene DSL.  
+Dynamic Island Wallpaper externalises real‑world conditions into a **symbolic island scene** using the scene DSL.  
 This symbolic state is rendered into a minimalist wallpaper that updates quietly every few minutes.
 
 It provides:
@@ -30,9 +30,11 @@ It provides:
 - **light level cues** → macro sense of time  
 - **sun position** → direction + progression  
 - **sky mode** → dawn/day/dusk/night as a visual clock  
-- **weather state** → rain, clouds, storms  
+- **weather state** → BOM‑derived conditions  
+- **tide height** → slow environmental rhythm  
+- **wind + waves** → motion cues  
 - **moon visibility** → late‑night indicator  
-- **stars** → “you’ve been working too long” cue  
+- **daily‑rhythm animations** → morning, work, breaks, evening, sleep  
 
 These cues sit in peripheral vision, gently signalling environmental change.
 
@@ -48,7 +50,7 @@ It compresses real telemetry into a **stable symbolic snapshot**:
 - easy to extend  
 - cognitively meaningful  
 
-This ensures the wallpaper is not “artistic noise” but a **functional environmental indicator**.
+The DSL ensures the wallpaper is not “artistic noise” but a **functional environmental indicator**.
 
 For details:  
 - DSL spec  
@@ -56,16 +58,28 @@ For details:
 
 ---
 
-## 5. Why a Tiny Model Renderer?  
-A tiny model acts as a **renderer**, not a creative generator.  
-It produces consistent, predictable images that:
+## 5. Why a Deterministic Semantic Layer?  
+The system is built around **deterministic semantics**:
 
-- don’t distract  
-- don’t vary stylistically  
-- don’t demand attention  
-- don’t break focus  
+- BOM + astronomy telemetry → deterministic numeric facts  
+- Prolog → deterministic symbolic bucketing  
+- DSL → deterministic symbolic scene  
 
-The wallpaper becomes a **visual chronometer**, not a piece of generative art.
+Determinism is binary — **a pipeline is deterministic or it is not**.
+
+### Procedural Rendering (Deterministic)  
+The procedural compositor produces:
+
+> **Same DSL + same base image → same PNG, byte‑for‑byte.**
+
+This mode is ideal for stability, reproducibility, and long‑term consistency.
+
+### Generative Rendering (Non‑Deterministic)  
+If a generative transformation (e.g., img2img) is applied to a reference image:
+
+> **The output is not deterministic**, even with fixed seeds.
+
+This mode is optional and explicitly non‑deterministic.
 
 ---
 
@@ -85,7 +99,7 @@ It is a **quiet companion** for deep work.
 ---
 
 ## 7. Long‑Term Motivation  
-The sky twin is the first domain.  
+The island twin is the first domain.  
 The broader motivation is to build a general **ambient digital‑twin framework** that supports:
 
 - city activity  
@@ -100,8 +114,8 @@ For future expansion:
 ---
 
 ## 8. Summary  
-Dynamic Sky Wallpaper exists to gently anchor you in time and environment while you work.  
-It restores context through ambient cues, using a symbolic DSL and deterministic rendering to create a stable, meaningful visual companion.
+Dynamic Island Wallpaper exists to gently anchor you in time and environment while you work.  
+It restores context through ambient cues, using a symbolic DSL and a deterministic semantic pipeline to create a stable, meaningful visual companion — with optional generative rendering when stylistic variation is desired.
 
 ---
 
