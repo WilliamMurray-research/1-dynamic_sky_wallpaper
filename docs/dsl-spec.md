@@ -1,18 +1,43 @@
-# Scene DSL Specification — **v0.0.1**
+# Scene DSL Specification  
+**Version: 0.0.1**
 
-## 1. Purpose  
-The **v0.0.1 Scene DSL** defines a complete symbolic description of the island‑based digital twin.  
-It is renderer‑agnostic, deterministic, and produced entirely by Prolog.  
-Python simply consumes the JSON and renders the scene.
+Dynamic Island Wallpaper uses a symbolic **Scene DSL** to describe the state of a small island environment.  
+The DSL is **declarative**, **finite**, and **renderer‑agnostic**.  
+It contains **no numeric telemetry**, **no rendering instructions**, and **no procedural or generative directives**.
 
-For deeper exploration:  
-- scene DSL  
-- rule engine
+The DSL is the *semantic contract* between the Prolog engine and any renderer.
+
+Renderers may be:
+
+- **deterministic** (procedural compositor), or  
+- **non‑deterministic** (generative reference‑image transformation)
+
+The DSL itself remains deterministic regardless of renderer choice.
 
 ---
 
-## 2. DSL Structure
+## 1. Purpose  
+The Scene DSL provides a stable, symbolic description of:
 
+- sky state  
+- weather  
+- tide  
+- wind  
+- waves  
+- palette  
+- daily rhythm cues  
+
+It is designed to be:
+
+- **minimal**  
+- **predictable**  
+- **easy to version**  
+- **easy to interpret**  
+- **independent of rendering technology**
+
+---
+
+## 2. DSL Structure  
 A valid scene description is a JSON object:
 
 ```json
@@ -35,148 +60,186 @@ A valid scene description is a JSON object:
 }
 ```
 
-All fields are symbolic.  
-No numeric telemetry appears in the DSL.
+All fields are **required** in v0.0.1.
 
 ---
 
 ## 3. Sky & Weather Fields
 
-### **sunposition**  
-Symbolic solar azimuth bucket.  
-Domain:  
+### `sunposition`
+Symbolic solar azimuth bucket.
+
+Values:  
 `"none" | "bottomleft" | "bottomright" | "midleft" | "midright" | "topleft" | "topright"`
 
-### **sun_height**  
-Symbolic solar altitude bucket.  
-Domain:  
+### `sun_height`
+Symbolic solar altitude bucket.
+
+Values:  
 `"none" | "low" | "medium" | "high"`
 
-### **sky_mode**  
-Time‑of‑day category.  
-Domain:  
+### `sky_mode`
+Time‑of‑day category.
+
+Values:  
 `"night" | "dawn" | "day" | "dusk"`
 
-### **weather**  
-Symbolic weather state.  
-Domain:  
+### `weather`
+Symbolic weather state.
+
+Values:  
 `"clear" | "cloudy" | "approaching_rain" | "rain"`
 
-### **moon**  
-Visible lunar phase.  
-Domain:  
+### `moon`
+Visible lunar phase.
+
+Values:  
 `"none" | "crescent" | "half" | "gibbous" | "full"`
 
-### **stars**  
-Star visibility.  
-Domain:  
-`true | false`
+### `stars`
+Star visibility.
 
-Explore these via sky rules.
+Values:  
+`true | false`
 
 ---
 
 ## 4. Island Environmental Fields
 
-### **tide_state**  
-Symbolic tide height.  
-Domain:  
+### `tide_state`
+Symbolic tide height.
+
+Values:  
 `"low" | "medium" | "high"`
 
-### **wind_strength**  
-Symbolic wind intensity.  
-Domain:  
+### `wind_strength`
+Symbolic wind intensity.
+
+Values:  
 `"none" | "breeze" | "windy" | "strong"`
 
-### **wave_intensity**  
-Symbolic ocean surface state.  
-Domain:  
+### `wave_intensity`
+Symbolic ocean surface state.
+
+Values:  
 `"calm" | "gentle" | "rough" | "storm"`
 
-### **island_palette**  
-Colour theme for the island scene.  
-Domain:  
-`"day" | "sunset" | "night"`
+### `island_palette`
+Colour theme for the island scene.
 
-Explore these via island rules.
+Values:  
+`"day" | "sunset" | "night"`
 
 ---
 
-## 5. Daily Rhythm Fields (Character Animations)
+## 5. Daily Rhythm Field
 
-### **daily_state**  
-Symbolic daily‑rhythm cue controlling character animation overlays.
+### `daily_state`
+Symbolic daily‑rhythm cue controlling character animations.
 
-Domain:  
-- `"morning_start"` — person with coffee  
-- `"work_start"` — person sitting down  
-- `"day_progress"` — normal island scene  
+Values:  
+- `"morning_start"` — coffee animation  
+- `"work_start"` — sitting animation  
+- `"day_progress"` — neutral scene  
 - `"break_time"` — callisthenics animation  
-- `"evening"` — person waving good night  
-- `"sleep_time"` — campfire being put out  
+- `"evening"` — wave animation  
+- `"sleep_time"` — campfire extinguish animation  
 
-Explore this via daily rhythm.
+This field does **not** specify animation frames or rendering behaviour.  
+It is purely symbolic.
 
 ---
 
 ## 6. Semantic Rules (Telemetry → DSL)
 
-These rules are implemented in Prolog and guarantee deterministic symbolic output.
+These rules are implemented in Prolog.  
+They convert raw numeric telemetry into symbolic categories.
 
-### Sun height  
+### Solar altitude → `sun_height`
 - alt < 0° → `"none"`  
 - alt < 10° → `"low"`  
 - alt < 35° → `"medium"`  
 - alt ≥ 35° → `"high"`
 
-### Sky mode  
+### Solar azimuth + altitude → `sunposition`
+Buckets are hemisphere‑aware and renderer‑agnostic.
+
+### Sky mode
 - alt < −6° → `"night"`  
 - −6° ≤ alt ≤ 6° → `"dawn"` or `"dusk"`  
 - alt > 6° → `"day"`
 
-### Tide  
+### Moon visibility
+- moon_alt < 0° → `"none"`  
+- otherwise → bucket phase
+
+### Stars
+- visible only when `moon = "none"` and `sky_mode = "night"`
+
+### Tide
 - < 0.5 m → `"low"`  
 - 0.5–1.2 m → `"medium"`  
 - > 1.2 m → `"high"`
 
-### Wind  
+### Wind
 - < 2 m/s → `"none"`  
 - 2–5 m/s → `"breeze"`  
 - 5–10 m/s → `"windy"`  
 - > 10 m/s → `"strong"`
 
-### Waves  
+### Waves
 Derived from wind + weather.
 
-### Palette  
+### Palette
 Derived from sky_mode.
 
-### Daily rhythm  
+### Daily rhythm
 Derived from user schedule + sunrise/sunset.
 
 ---
 
-## 7. Versioning Rules
+## 7. Renderer Independence  
+The DSL does **not** assume a deterministic renderer.
 
-- All fields are required in v0.0.1.  
-- Future versions must remain backward‑compatible.  
-- Renderers must ignore unknown fields gracefully.  
-- Prolog is the authoritative source of truth.
+Two renderer modes exist:
+
+### **Procedural compositor (deterministic)**  
+- Same DSL → same PNG  
+- Byte‑for‑byte reproducible  
+- No randomness  
+- No diffusion  
+- No sampling
+
+### **Generative reference‑image mode (non‑deterministic)**  
+- Uses diffusion or img2img  
+- Output varies even with fixed seeds  
+- GPU nondeterminism applies  
+- Not reproducible byte‑for‑byte
+
+The DSL remains valid for both modes.
 
 ---
 
-## 8. Summary  
-DSL v0.0.1 is a complete symbolic description of your island‑based digital twin:
+## 8. Versioning  
+- DSL versions are immutable  
+- Renderers must ignore unknown fields  
+- Prolog rules may evolve without breaking old DSLs  
+- Telemetry sources may change without affecting DSL structure  
 
-- sky  
-- weather  
-- tide  
-- wind  
-- waves  
-- palette  
-- daily‑rhythm character animations  
+---
 
-It is deterministic, renderer‑agnostic, and perfectly suited for Prolog emission and procedural animation overlays.
+## 9. Summary  
+The Scene DSL v0.0.1 is:
+
+- symbolic  
+- deterministic  
+- declarative  
+- renderer‑agnostic  
+- stable  
+- minimal  
+- extensible  
+
+It is the semantic backbone of Dynamic Island Wallpaper.
 
 ---
 
