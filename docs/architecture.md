@@ -1,6 +1,11 @@
 # Architecture  
-Dynamic Island Wallpaper is a deterministic **telemetry → semantics → rendering** pipeline.  
-It produces a symbolic JSON scene using **Prolog**, then renders a stable island wallpaper using a **procedural compositor**.
+Dynamic Island Wallpaper is a **telemetry → semantics → rendering** pipeline.  
+It produces a symbolic JSON scene using **Prolog**, then renders an island wallpaper using either:
+
+- a **deterministic procedural compositor**, or  
+- a **non‑deterministic generative transformation** applied to a reference image.
+
+Because determinism is binary, the architecture explicitly distinguishes these two modes.
 
 The system is intentionally modular:
 
@@ -15,22 +20,20 @@ Each layer is isolated, testable, and replaceable.
 ## 1. System Overview  
 The architecture is built around four principles:
 
-- **Determinism** — identical inputs produce identical outputs  
+- **Determinism (procedural mode)** — identical inputs produce identical outputs  
 - **Symbolic Semantics** — all meaning is encoded in the DSL  
 - **Renderer Independence** — any renderer can consume the DSL  
 - **Ambient Cues** — the wallpaper conveys time and environment passively  
 
-The system is not a generative art pipeline.  
-It is a **digital twin** of a small island environment.
+When using the **procedural compositor**, the system is fully deterministic.  
+When using a **generative transformation** (e.g., img2img) with a reference image, the output is **not deterministic**, even if seeded, due to inherent stochasticity in diffusion‑based pipelines.
 
-Explore:  
-- scene DSL  
-- rule engine
+The system is a **digital twin** of a small island environment.
 
 ---
 
 ## 2. Telemetry Layer  
-Telemetry is computed **locally**, without external APIs.
+Telemetry is a combination of **local computation** and **external API data**.
 
 ### 2.1 Astronomy  
 The system computes:
@@ -43,14 +46,14 @@ The system computes:
 
 These values are derived from standard astronomical formulas.
 
-### 2.2 Environment  
-The system computes:
+### 2.2 Environment (BOM API)  
+The system fetches:
 
 - tide height  
 - wind speed  
 - weather state  
 
-These are simple deterministic formulas or local heuristics.
+These values are retrieved from the Bureau of Meteorology (BOM) API and normalised into internal numeric codes or units.
 
 ### 2.3 Output  
 Telemetry produces **raw numeric facts**, never symbolic categories.
@@ -66,9 +69,6 @@ tide_height(0.8).
 wind_speed(4.2).
 weather_code(2).
 ```
-
-Explore:  
-- astronomy computation
 
 ---
 
@@ -128,9 +128,6 @@ Example:
 }
 ```
 
-Explore:  
-- Prolog JSON emitter
-
 ---
 
 ## 4. Scene DSL (v0.0.1)  
@@ -149,15 +146,17 @@ Fields include:
 - palette  
 - daily rhythm  
 
-Full spec:  
-- DSL v0.0.1
+---
+
+## 5. Renderer  
+The renderer consumes the DSL JSON and produces the wallpaper image.  
+There are **two rendering modes**, each with different determinism properties.
 
 ---
 
-## 5. Procedural Renderer  
-The renderer consumes the DSL JSON and produces a deterministic PNG.
+### 5.1 Deterministic Procedural Mode  
+This mode is **strictly deterministic**.
 
-### 5.1 Base Image  
 A single base PNG contains:
 
 - island silhouette  
@@ -165,8 +164,7 @@ A single base PNG contains:
 - palm tree neutral pose  
 - sky gradient placeholders  
 
-### 5.2 Deterministic Overlays  
-The renderer applies overlays based on DSL fields:
+The renderer applies deterministic overlays based on DSL fields:
 
 - **waterline mask** → `tide_state`  
 - **wave texture** → `wave_intensity`  
@@ -176,20 +174,24 @@ The renderer applies overlays based on DSL fields:
 - **weather overlays** → `weather`  
 - **character animations** → `daily_state`
 
-### 5.3 Animation System  
-Animations are frame sequences or sprite sheets:
+Animations are fixed frame sequences or sprite sheets.
 
-- morning coffee  
-- sitting down to work  
-- callisthenics  
-- evening wave  
-- campfire extinguish  
+Given the same DSL + same base image → **the output PNG is identical**.
 
-The renderer composites these frames on top of the base scene.
+---
 
-Explore:  
-- procedural renderer  
-- animation system
+### 5.2 Generative Reference‑Image Mode (Non‑Deterministic)  
+If the renderer uses a **reference image** and applies a **generative transformation** (e.g., diffusion‑based img2img), the output is **not deterministic**, even if:
+
+- the seed is fixed  
+- the model is fixed  
+- the scheduler is fixed  
+- the prompt is fixed  
+- the reference image is fixed  
+
+GPU execution, floating‑point nondeterminism, and stochastic denoising introduce unavoidable variation.
+
+This mode is optional and explicitly non‑deterministic.
 
 ---
 
@@ -205,7 +207,7 @@ This module is intentionally simple and replaceable.
 ```
 +------------------+
 |   Telemetry      |
-| (astronomy/env)  |
+| (astronomy/BOM)  |
 +--------+---------+
          |
          v
@@ -223,7 +225,8 @@ This module is intentionally simple and replaceable.
          v
 +------------------+
 |   Renderer       |
-| (procedural)     |
+| procedural OR    |
+| generative       |
 +--------+---------+
          |
          v
@@ -245,19 +248,17 @@ The architecture follows strict versioning rules:
 ---
 
 ## 9. Summary  
-Dynamic Island Wallpaper is a deterministic digital twin built from:
+Dynamic Island Wallpaper is a digital twin built from:
 
-- local telemetry  
+- local astronomy  
+- BOM environmental telemetry  
 - Prolog semantics  
 - symbolic DSL  
-- procedural rendering  
+- procedural or generative rendering  
 - ambient daily‑rhythm cues  
 
-It is designed for stability, clarity, and long‑term extensibility.
+**Procedural mode is deterministic.**  
+**Generative mode is not.**
 
 ---
 
-
-- **dsl-spec.md**  
-
-Just tell me which file you want next.
