@@ -42,7 +42,7 @@ This keeps GPU usage extremely low while producing a continuously updated sky.
 
 ## Project Structure  
 ```
-dynamic-sky-wallpaper/
+dynamic_sky_wallpaper/
 │
 ├── docs/
 │   ├── dsl-spec.md            # Formal scene DSL specification
