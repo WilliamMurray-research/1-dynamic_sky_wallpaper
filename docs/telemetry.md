@@ -16,9 +16,9 @@ Telemetry provides the Prolog engine with:
 - solar position  
 - lunar position  
 - lunar phase  
-- tide height  
-- wind speed  
-- weather state  
+- tide height (BOM)  
+- wind speed (BOM)  
+- weather state (BOM)  
 
 These values are **raw numeric measurements**, not DSL categories.
 
@@ -36,7 +36,7 @@ This separation ensures clarity, testability, and deterministic behaviour.
 
 ---
 
-## 3. Local Astronomy (Fully Deterministic)  
+# 3. Local Astronomy (Fully Deterministic)  
 Astronomical values are computed locally using standard formulas.
 
 ### 3.1 Solar Position  
@@ -45,7 +45,7 @@ Computed values:
 - **solar altitude** (degrees above/below horizon)  
 - **solar azimuth** (compass direction)  
 
-These are derived from:
+Derived from:
 
 - observer latitude  
 - observer longitude  
@@ -61,10 +61,7 @@ Computed values:
 - **lunar phase fraction** (0–1)
 
 ### 3.3 Sunrise/Sunset  
-Computed using solar altitude thresholds:
-
-- sunrise ≈ altitude crosses 0° upward  
-- sunset ≈ altitude crosses 0° downward  
+Computed using solar altitude thresholds.
 
 ### 3.4 Output  
 Astronomy produces raw numeric facts:
@@ -79,41 +76,145 @@ sunrise(Time).
 sunset(Time).
 ```
 
-These values are passed directly to Prolog.
+---
+
+# 4. BOM API (External Environmental Telemetry)  
+Environmental data is fetched from the **Bureau of Meteorology (BOM)**.  
+This section documents the exact endpoints and how their fields map into your numeric telemetry facts.
 
 ---
 
-## 4. BOM API (External Environmental Telemetry)  
-Environmental data is fetched from the **Bureau of Meteorology (BOM)**.
+## 4.1 BOM Endpoints Used
 
-### 4.1 Tide Height  
-BOM tide endpoints provide:
+### **A. Weather Observations (Wind + Weather Code)**  
+Endpoint (JSON):
 
-- predicted tide height (metres)  
-- timestamped tide events  
+```
+https://api.weather.bom.gov.au/v1/locations/<location-id>/observations
+```
 
-Telemetry extracts the current tide height and passes it as a numeric value.
+This returns a structure containing:
 
-### 4.2 Wind Speed  
-BOM weather observations provide:
+- `wind.speed_kilometre`  
+- `wind.gust_kilometre`  
+- `wind.direction`  
+- `cloud`  
+- `rain_since_9am`  
+- `weather` (text description)  
+- `icon_descriptor` (symbolic weather code)  
 
-- wind speed (m/s or km/h)  
-- wind gusts  
-- wind direction  
+### **B. Marine / Tide Predictions**  
+Endpoint (JSON):
 
-Telemetry normalises wind speed into m/s.
+```
+https://api.weather.bom.gov.au/v1/locations/<location-id>/forecasts/tides
+```
 
-### 4.3 Weather State  
-BOM provides:
+This returns:
 
-- weather condition codes  
-- cloud cover  
-- precipitation  
-- storm indicators  
+- `tides[].height` (metres)  
+- `tides[].time` (ISO timestamp)  
+- `tides[].type` (high/low)  
 
-Telemetry maps BOM’s condition codes into a **numeric weather_code**, not symbolic categories.
+Telemetry selects the tide height closest to the current timestamp.
 
-### 4.4 Output  
+---
+
+# 4.2 Mapping BOM → Telemetry Facts
+
+## A. Tide Height Mapping  
+From the tide endpoint:
+
+```json
+{
+  "tides": [
+    { "height": 0.82, "time": "2026-07-24T21:00:00+09:30", "type": "high" },
+    ...
+  ]
+}
+```
+
+Telemetry selects the tide event closest to the current time:
+
+```
+tide_height(0.82).
+```
+
+No symbolic bucketing occurs here.
+
+---
+
+## B. Wind Speed Mapping  
+From the observations endpoint:
+
+```json
+{
+  "wind": {
+    "speed_kilometre": 15.0,
+    "gust_kilometre": 22.0,
+    "direction": "NW"
+  }
+}
+```
+
+Telemetry converts km/h → m/s:
+
+\[
+\text{m/s} = \frac{\text{km/h}}{3.6}
+\]
+
+Example:
+
+```
+wind_speed(4.16).
+```
+
+Wind direction is ignored at the telemetry stage.
+
+---
+
+## C. Weather Code Mapping  
+BOM provides a symbolic descriptor:
+
+```json
+{
+  "icon_descriptor": "rain",
+  "weather": "Showers increasing"
+}
+```
+
+Telemetry maps `icon_descriptor` to a **numeric weather_code**:
+
+| BOM `icon_descriptor` | weather_code |
+|------------------------|--------------|
+| `"clear"`              | 0 |
+| `"mostly_sunny"`       | 0 |
+| `"partly_cloudy"`      | 1 |
+| `"cloudy"`             | 1 |
+| `"light_rain"`         | 2 |
+| `"rain"`               | 2 |
+| `"heavy_rain"`         | 3 |
+| `"storm"`              | 4 |
+| `"thunderstorm"`       | 4 |
+
+Example:
+
+```
+weather_code(2).
+```
+
+Prolog later converts this numeric code into symbolic DSL categories:
+
+- `clear`  
+- `cloudy`  
+- `approaching_rain`  
+- `rain`
+
+Telemetry does **not** perform this symbolic mapping.
+
+---
+
+# 4.3 Output  
 Environmental telemetry produces raw numeric facts:
 
 ```
@@ -126,7 +227,7 @@ These values are passed directly to Prolog.
 
 ---
 
-## 5. Telemetry → Prolog Interface  
+# 5. Telemetry → Prolog Interface  
 Telemetry never produces symbolic DSL fields.  
 It only produces numeric facts.
 
@@ -151,7 +252,7 @@ Prolog receives these facts and applies semantic rules to produce the DSL.
 
 ---
 
-## 6. Determinism  
+# 6. Determinism  
 Telemetry is deterministic **as long as BOM returns consistent data**.
 
 - Local astronomy is strictly deterministic  
@@ -166,7 +267,7 @@ Telemetry remains deterministic regardless of renderer mode.
 
 ---
 
-## 7. Error Handling  
+# 7. Error Handling  
 If BOM data is unavailable:
 
 - telemetry falls back to the last known values  
@@ -178,11 +279,12 @@ Astronomy is unaffected by BOM outages.
 
 ---
 
-## 8. Summary  
+# 8. Summary  
 Telemetry provides:
 
 - **local deterministic astronomy**  
 - **BOM environmental data**  
+- **explicit endpoint mappings**  
 - **raw numeric facts**  
 - **no symbolic interpretation**  
 - **no rendering instructions**  
