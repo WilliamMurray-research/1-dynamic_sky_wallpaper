@@ -1,196 +1,194 @@
-# Telemetry Specification
+# Telemetry  
+Telemetry is the **first stage** of the Dynamic Island Wallpaper pipeline.  
+It gathers **raw environmental and astronomical data**, converts nothing to symbolic form, and passes the raw values directly to the Prolog semantic engine.
+
+Telemetry itself is **deterministic**:
+
+> Given the same time, location, and BOM API responses → telemetry produces the same numeric facts.
+
+Symbolic interpretation happens **only in Prolog**, never in telemetry.
+
+---
 
 ## 1. Purpose  
-The telemetry layer provides **raw real‑world data** to the system.  
-It does *not* interpret, bucket, or symbolise anything — that is the job of the scene rules.  
-Telemetry must be:
+Telemetry provides the Prolog engine with:
 
-- accurate  
-- numeric or categorical  
-- timestamped  
-- free of DSL semantics  
+- solar position  
+- lunar position  
+- lunar phase  
+- tide height  
+- wind speed  
+- weather state  
 
-This ensures the digital‑twin pipeline remains clean and modular.
+These values are **raw numeric measurements**, not DSL categories.
+
+Prolog is responsible for bucketing them into symbolic DSL fields.
 
 ---
 
 ## 2. Telemetry Sources  
-The system currently supports three categories of telemetry:
+Telemetry comes from two independent sources:
 
-1. **Solar and lunar data**  
-2. **Weather data**  
-3. **Optional tide data**
+1. **Local astronomical computation**  
+2. **Bureau of Meteorology (BOM) API**
 
-Each source is fetched independently and returned as raw values.
-
-For deeper exploration:  
-- sun/moon telemetry  
-- weather telemetry  
-- tide telemetry
+This separation ensures clarity, testability, and deterministic behaviour.
 
 ---
 
-## 3. Solar & Lunar Telemetry (`src/api/sun_moon.py`)
+## 3. Local Astronomy (Fully Deterministic)  
+Astronomical values are computed locally using standard formulas.
 
-### 3.1 Required Outputs  
-The module must return a dictionary containing:
+### 3.1 Solar Position  
+Computed values:
 
-```json
-{
-  "sun_alt": <float>,      // degrees
-  "sun_az": <float>,       // degrees
-  "moon_alt": <float>,     // degrees
-  "moon_phase": <float>    // 0.0 = new, 1.0 = full
-}
+- **solar altitude** (degrees above/below horizon)  
+- **solar azimuth** (compass direction)  
+
+These are derived from:
+
+- observer latitude  
+- observer longitude  
+- Julian date  
+- solar declination  
+- hour angle  
+
+### 3.2 Lunar Position  
+Computed values:
+
+- **lunar altitude**  
+- **lunar azimuth**  
+- **lunar phase fraction** (0–1)
+
+### 3.3 Sunrise/Sunset  
+Computed using solar altitude thresholds:
+
+- sunrise ≈ altitude crosses 0° upward  
+- sunset ≈ altitude crosses 0° downward  
+
+### 3.4 Output  
+Astronomy produces raw numeric facts:
+
+```
+sun_alt(AltDegrees).
+sun_az(AzimuthDegrees).
+moon_alt(AltDegrees).
+moon_az(AzimuthDegrees).
+moon_phase(PhaseFraction).
+sunrise(Time).
+sunset(Time).
 ```
 
-### 3.2 Semantics  
-- `sun_alt` — solar altitude above/below horizon  
-- `sun_az` — solar azimuth (0–360°)  
-- `moon_alt` — lunar altitude  
-- `moon_phase` — fractional illumination  
-
-### 3.3 Source Options  
-You may use:
-
-- Open‑Meteo astronomy API  
-- NOAA solar position API  
-- PyEphem / Astral for local computation  
-
-The implementation must be deterministic and return raw values only.
+These values are passed directly to Prolog.
 
 ---
 
-## 4. Weather Telemetry (`src/api/weather.py`)
+## 4. BOM API (External Environmental Telemetry)  
+Environmental data is fetched from the **Bureau of Meteorology (BOM)**.
 
-### 4.1 Required Outputs  
-The module must return:
+### 4.1 Tide Height  
+BOM tide endpoints provide:
 
-```json
-{
-  "cloud_cover": <float>,        // percentage
-  "precip_prob": <float>,        // percentage
-  "precip_intensity": <float>,   // mm/hr
-  "conditions": "<string>"       // provider-specific descriptor
-}
+- predicted tide height (metres)  
+- timestamped tide events  
+
+Telemetry extracts the current tide height and passes it as a numeric value.
+
+### 4.2 Wind Speed  
+BOM weather observations provide:
+
+- wind speed (m/s or km/h)  
+- wind gusts  
+- wind direction  
+
+Telemetry normalises wind speed into m/s.
+
+### 4.3 Weather State  
+BOM provides:
+
+- weather condition codes  
+- cloud cover  
+- precipitation  
+- storm indicators  
+
+Telemetry maps BOM’s condition codes into a **numeric weather_code**, not symbolic categories.
+
+### 4.4 Output  
+Environmental telemetry produces raw numeric facts:
+
+```
+tide_height(HeightMetres).
+wind_speed(MetresPerSecond).
+weather_code(Code).
 ```
 
-### 4.2 Semantics  
-- `cloud_cover` — total cloud fraction  
-- `precip_prob` — probability of rain  
-- `precip_intensity` — rain rate  
-- `conditions` — raw descriptor (e.g., “light rain”, “clear”)  
-
-### 4.3 Source Options  
-Common providers:
-
-- OpenWeather  
-- WeatherAPI  
-- Open‑Meteo  
-
-The module must not convert weather into DSL categories — that is handled in `scene/rules.py`.
+These values are passed directly to Prolog.
 
 ---
 
-## 5. Tide Telemetry (`src/api/tides.py`) (Optional)
+## 5. Telemetry → Prolog Interface  
+Telemetry never produces symbolic DSL fields.  
+It only produces numeric facts.
 
-### 5.1 Required Outputs  
-If enabled, return:
+Example full telemetry set:
 
-```json
-{
-  "tide_height": <float>,     // metres
-  "tide_state": "<string>"    // raw descriptor
-}
+```
+sun_alt(12.4).
+sun_az(145.0).
+moon_alt(-5.0).
+moon_az(210.0).
+moon_phase(0.62).
+
+tide_height(0.8).
+wind_speed(4.2).
+weather_code(2).
+
+sunrise(07:12).
+sunset(17:46).
 ```
 
-### 5.2 Semantics  
-- `tide_height` — absolute water level  
-- `tide_state` — provider descriptor (e.g., “rising”, “falling”)  
-
-### 5.3 Source Options  
-For Australia (user location: Port Pirie, SA):
-
-- BOM tide endpoints  
-- Local tide prediction libraries  
-
-Tide data is optional and not required for core rendering.
+Prolog receives these facts and applies semantic rules to produce the DSL.
 
 ---
 
-## 6. Telemetry Update Cycle  
-Telemetry is fetched at a fixed interval defined in `config.json`:
+## 6. Determinism  
+Telemetry is deterministic **as long as BOM returns consistent data**.
 
-```json
-"updateintervalminutes": 5
-```
+- Local astronomy is strictly deterministic  
+- BOM API responses are treated as deterministic inputs  
+- Telemetry does not introduce randomness  
+- Telemetry does not perform symbolic bucketing  
+- Telemetry does not perform rendering logic  
 
-Rules:
+Determinism is broken **only** if the renderer uses a generative transformation.
 
-1. All telemetry must be fetched fresh each cycle.  
-2. Telemetry modules must not cache or reuse previous values.  
-3. Failures must return `None` or raise a controlled exception.  
-4. The main loop handles retries and fallback behaviour.
+Telemetry remains deterministic regardless of renderer mode.
 
 ---
 
 ## 7. Error Handling  
-Telemetry modules must:
+If BOM data is unavailable:
 
-- fail gracefully  
-- return partial data if possible  
-- never produce DSL values  
-- never guess or infer missing values  
+- telemetry falls back to the last known values  
+- Prolog receives fallback numeric facts  
+- the DSL remains valid  
+- the renderer continues to operate  
 
-If a provider fails, the module should return:
-
-```json
-{
-  "error": "<string>"
-}
-```
-
-The scene builder decides how to handle missing fields.
+Astronomy is unaffected by BOM outages.
 
 ---
 
-## 8. Determinism Requirements  
-Telemetry must be:
+## 8. Summary  
+Telemetry provides:
 
-- timestamped  
-- reproducible given the same timestamp and location  
-- free of randomness  
-- free of symbolic interpretation  
+- **local deterministic astronomy**  
+- **BOM environmental data**  
+- **raw numeric facts**  
+- **no symbolic interpretation**  
+- **no rendering instructions**  
+- **no nondeterminism**
 
-This ensures the DSL remains stable and predictable.
-
----
-
-## 9. Telemetry → DSL Boundary  
-Telemetry ends where interpretation begins.
-
-Telemetry modules **must not**:
-
-- bucket values  
-- classify sky modes  
-- determine sunposition  
-- interpret moon phase  
-- decide star visibility  
-- generate prompts  
-
-All symbolic logic belongs in:
-
-- scene rules  
-- DSL spec
-
-Telemetry is raw input only.
-
----
-
-## 10. Summary  
-The telemetry layer provides raw, accurate, deterministic real‑world data to the system.  
-It is intentionally simple and strictly separated from the DSL and rendering logic.  
-This separation ensures the digital‑twin pipeline remains modular, testable, and extensible.
+It is the foundation of the digital twin.
 
 ---
 
