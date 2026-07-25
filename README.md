@@ -1,8 +1,8 @@
 # Dynamic Island Wallpaper  
 ## Project 1
 
-| **Start**: | 22 July 2026 |
-| **End** | - |
+**Start**: 22 July 2026 
+**End**: - 
 
 > Note: This project is intentionally scoped as a personal learning exercise in digital‑twin design, symbolic scene languages, Prolog rule systems, and deterministic rendering pipelines. It is architecturally opinionated but exploratory, serving as a sandbox for developing and refining system‑design skills.
 
