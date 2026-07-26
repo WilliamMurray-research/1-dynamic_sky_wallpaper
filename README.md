@@ -64,42 +64,47 @@ This produces a stable, ambient, low‑GPU digital twin of your day.
 dynamic_island_wallpaper/
 │
 ├── docs/
-│   ├── motivation.md          # Why the project exists; design philosophy
-│   ├── dsl-spec.md            # Formal scene DSL specification (v0.0.1)
-│   ├── architecture.md        # Full system architecture & data flow
-│   ├── telemetry.md           # Astronomy + BOM telemetry (deterministic)
-│   ├── rendering.md           # Procedural compositor & generative mode
-│   ├── roadmap.md             # Planned extensions & future versions
-│   └── contributing.md        # Contributor guidelines & coding standards
+│   ├── whitepapers/
+│   │   └── astro_projection.md     # Astronomical Telemetry & Symbolic Sky Projection
+|
+│   ├── motivation.md               # Why the project exists; design philosophy
+│   ├── dsl-spec.md                 # Formal scene DSL specification (v0.0.1)
+│   ├── architecture.md             # Full system architecture & data flow
+│   ├── telemetry.md                # Astronomy + BOM telemetry (deterministic)
+│   ├── rendering.md                # Procedural compositor & generative mode
+│   ├── roadmap.md                  # Planned extensions & future versions
+│   └── contributing.md             # Contributor guidelines & coding standards
 │
+├── img/                            # Example images (.jpg)
+|
 ├── src/
 │   ├── telemetry/
-│   │   ├── astronomy.py       # Sun/moon position + phase (local computation)
-│   │   ├── bom_weather.py     # BOM weather + wind → numeric telemetry
-│   │   └── bom_tide.py        # BOM tide height → numeric telemetry
+│   │   ├── astronomy.py            # Sun/moon position + phase (local computation)
+│   │   ├── bom_weather.py          # BOM weather + wind → numeric telemetry
+│   │   └── bom_tide.py             # BOM tide height → numeric telemetry
 │   │
 │   ├── prolog/
-│   │   ├── rules.pl           # Telemetry → symbolic scene rules
-│   │   └── emit_json.pl       # Prolog → DSL JSON emitter
+│   │   ├── rules.pl                # Telemetry → symbolic scene rules
+│   │   └── emit_json.pl            # Prolog → DSL JSON emitter
 │   │
 │   ├── renderer/
-│   │   ├── compositor.py      # Base image + deterministic overlays
-│   │   ├── palette.py         # Day/sunset/night recolouring
-│   │   ├── waves.py           # Wave intensity overlays
-│   │   ├── tree.py            # Palm tree wind transform
-│   │   └── animations.py      # Daily rhythm animations
+│   │   ├── compositor.py           # Base image + deterministic overlays
+│   │   ├── palette.py              # Day/sunset/night recolouring
+│   │   ├── waves.py                # Wave intensity overlays
+│   │   ├── tree.py                 # Palm tree wind transform
+│   │   └── animations.py           # Daily rhythm animations
 │   │
 │   ├── wallpaper/
-│   │   └── setter.py          # OS-specific wallpaper update
+│   │   └── setter.py               # OS-specific wallpaper update
 │   │
 │   ├── config/
-│   │   └── loader.py          # Config loader & validation
+│   │   └── loader.py               # Config loader & validation
 │   │
-│   └── main.py                # Main loop: telemetry → Prolog → render → wallpaper
+│   └── main.py                     # Main loop: telemetry → Prolog → render → wallpaper
 │
-├── assets/                    # Base island image + overlays + animation frames
+├── assets/                         # Base island image + overlays + animation frames
 │
-├── tests/                     # Unit tests for DSL, rules, telemetry, rendering
+├── tests/                          # Unit tests for DSL, rules, telemetry, rendering
 │   ├── test_rules.py
 │   ├── test_emit_json.py
 │   ├── test_astronomy.py
@@ -111,10 +116,10 @@ dynamic_island_wallpaper/
 │   ├── test_animations.py
 │   └── test_compositor.py
 │
-├── config.json                # User configuration (location, rhythm, BOM ID)
-├── README.md                  # Project overview & quickstart
-├── CHANGELOG.md               # Version history
-└── LICENSE                    # Open-source license
+├── config.json                     # User configuration (location, rhythm, BOM ID)
+├── README.md                       # Project overview & quickstart
+├── CHANGELOG.md                    # Version history
+└── LICENSE                         # Open-source license
 ```
 
 ---
