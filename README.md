@@ -242,27 +242,6 @@ The final PNG is saved and applied using OS‑specific commands.
 
 ---
 
-## Installation
-
-### Requirements  
-- Python 3.10+  
-- SWI‑Prolog  
-- Pillow or similar image library  
-
-### Setup  
-```
-git clone https://github.com/<yourname>/dynamic-island-wallpaper
-cd dynamic-island-wallpaper
-pip install -r requirements.txt
-```
-
-### Run  
-```
-python main.py
-```
-
----
-
 ## Configuration  
 `config.json`:
 
