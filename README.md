@@ -1,4 +1,4 @@
-# Dynamic Island Wallpaper - Project 1
+# Dynamic Island Wallpaper - Project 2
 #### Version: 0.0.1
 
 | **Start**: | 22 July 2026 |
