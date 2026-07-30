@@ -283,12 +283,12 @@ The final PNG is saved and applied using OS‑specific commands.
 ---
 
 ## Roadmap  
-[ ] Seasonal palettes  
-[ ] Cloud type classification  
-[ ] Character emotion states  
-[ ] Multi‑domain digital‑twin support  
-[ ] Prolog explain‑why queries  
-[ ] Smooth animation interpolation  
+[  ] Seasonal palettes  
+[  ] Cloud type classification  
+[  ] Character emotion states  
+[  ] Multi‑domain digital‑twin support  
+[  ] Prolog explain‑why queries  
+[  ] Smooth animation interpolation  
 
 ---
 
