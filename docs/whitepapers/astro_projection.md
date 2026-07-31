@@ -1,6 +1,8 @@
 # **Dynamic Island Wallpaper — Astronomical Telemetry & Symbolic Sky Projection**  
-### *Technical Whitepaper v1.0 — July 2026*
-
+### Technical Whitepaper v1.0 
+---
+#### William Murray
+#### 26 July 2026
 ---
 
 ## **Abstract**
