@@ -1,4 +1,4 @@
-# **Dynamic Island Wallpaper — Astronomical Telemetry & Symbolic Sky Projection**  
+# **Dynamic Island Wallpaper: Astronomical Telemetry & Symbolic Sky Projection**  
 ### Technical Whitepaper v1.0 
 ---
 #### William Murray
