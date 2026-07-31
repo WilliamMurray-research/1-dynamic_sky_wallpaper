@@ -1,3 +1,4 @@
+Document Reference: `2026-001-DW-wp`
 # **Dynamic Island Wallpaper: Astronomical Telemetry & Symbolic Sky Projection**  
 ### Technical Whitepaper v1.0 
 ---
@@ -276,4 +277,4 @@ This whitepaper defines a complete, deterministic, and explainable astronomical 
 ---
 
 
-Just tell me which one you want next.
+
